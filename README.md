@@ -1,233 +1,150 @@
-IIT Bhubaneswar Live Bus Tracking System
-Overview
-This project provides a real-time, live tracking system for the campus buses at IIT Bhubaneswar. In a large campus environment, bus schedules can be subject to delays due to traffic, weather, or other unforeseen circumstances. This system aims to solve the problem of uncertainty by providing students and faculty with a simple web-based map showing the exact, live location of every bus in the fleet.
+# IIT Bhubaneswar — Live Bus Tracking System
+
+**Live tracking dashboard for the 6 campus buses at IIT Bhubaneswar.**  
+Retrofit each bus with a low-cost ESP32 + cellular + GPS tracker that pushes coordinates to the Blynk IoT cloud. A public web dashboard (Blynk Web Dashboard) displays each bus on a map with ~5–10s refresh.
+
+---
+
+## Table of contents
+1. [Overview](#overview)  
+2. [Features](#features)  
+3. [System architecture](#system-architecture)  
+4. [Hardware requirements](#hardware-requirements)  
+5. [Software & libraries](#software--libraries)  
+6. [Blynk cloud setup (step-by-step)](#blynk-cloud-setup-step-by-step)  
+7. [Hardware assembly & wiring](#hardware-assembly--wiring)  
+8. [Deployment & testing checklist](#deployment--testing-checklist)  
+9. [Troubleshooting & tips](#troubleshooting--tips)  
+10. [Safety](#safety)  
+11. [Future improvements](#future-improvements)  
+12. [License & credits](#license--credits)
+
+---
+
+## Overview
+Large campuses suffer from schedule uncertainty. This project delivers a simple, reliable, web-based map showing exact, live locations of all campus buses so students and staff can time their arrival. The design prioritizes low cost and reliability by leveraging Blynk IoT cloud for backend & web dashboard, while hardware units focus on robust data capture and transmission.
+
+---
+
+## Features
+- Real-time tracking (~5–10 s refresh)
+- Web dashboard (no app install)
+- Multi-vehicle support (6 buses, unique icons)
+- Low-cost hardware and easily reproducible units
+- Cellular connectivity (GPRS/4G) — independent of campus Wi-Fi
+- Robust power: powered from the bus electrical system (12V/24V → 5V)
+
+---
+
+## System architecture
+```
+[GPS module]  [ESP32 (TTGO T-Call)]  [Cellular modem]  --cellular-->  Blynk IoT Cloud  --> Web Dashboard (Map)
+      |               |                                  |
+      |---------------|----------------------------------|
+                 On-bus power (via LM2596 buck converter)
+```
+
+Each tracker:
+- Reads GPS NMEA from the GPS module
+- Sends parsed coordinates and device metadata to Blynk datastreams
+- Blynk Web Dashboard map widget shows all devices in real time
+
+---
+
+## Hardware requirements (per bus)
+| Component | Example model | Qty | Purpose |
+|---|---:|:---:|---|
+| Microcontroller + Cellular | TTGO T-Call (ESP32 + SIM800L) | 1 | Tracker brain & modem |
+| GPS module | NEO-6M / NEO-7M | 1 | Satellite fix |
+| DC-DC Buck converter | LM2596 | 1 | 12/24V → 5V stable supply |
+| SIM card | Any provider (Jio/Airtel/etc.) | 1 | Cellular data |
+| Cellular antenna | SMA / u.FL antenna | 1 | Improve cellular reception |
+| GPS antenna | Active ceramic patch antenna | 1 | Improve GPS reception |
+| Enclosure | IP65, non-metallic | 1 | Protection from dust/vibration |
+| Wires / soldering kit | — | — | Reliable, vibration-proof connections |
+
+---
+
+## Software & libraries
+- Arduino IDE or PlatformIO
+- Blynk Cloud account
+- Core libraries commonly used for this build:
+  - Blynk library supporting ESP32 + GSM
+  - TinyGPS++ (NMEA parsing / GPS)
+  - Any serial/UART helper libraries needed by your board
+
+---
+
+## Blynk cloud setup (step-by-step)
+1. Create a Blynk account and log in.  
+2. Create a new **Template** (name it appropriately for the project). Select `ESP32` as the hardware type.  
+3. Add Datastreams to the template:
+   - `GPS Coordinates` → Virtual Pin `V0` → Data type: **Location**
+   - `Bus ID` → Virtual Pin `V1` → Data type: **String**
+4. Create one device entry per bus (six devices). Each device will be registered under the template.  
+5. Configure the **Web Dashboard** for the template:
+   - Add a **Map** widget
+   - Point the widget to the GPS Coordinates datastream
+   - Enable options to show all devices and device names on hover
+6. Publish or share the dashboard URL to allow web access (internal or public depending on your sharing settings).
+
+> Note: Blynk issues per-device credentials and device entries during the device creation process. The cloud handles storage, mapping, and visualization once devices publish location data to the configured datastreams.
+
+---
+
+## Hardware assembly & wiring
+> Workbench testing first — do not wire to a vehicle until bench tests pass.
+
+### Buck converter setup (LM2596)
+1. Connect a stable 12V source to the converter input.  
+2. Measure the converter output with a multimeter and adjust the potentiometer until the output reads **5.00 V**. Confirm the reading under a light load.
+
+### Recommended connections (conceptual)
+- **Power**: Buck converter 5V → ESP32 5V pin; buck converter GND → ESP32 GND.  
+- **GPS**: GPS module VCC → module-appropriate voltage (check module specs), GPS GND → GND, GPS TX → an available UART RX pin on the ESP32, GPS RX → the corresponding UART TX pin on the ESP32.  
+- **Cellular antenna**: Connect to the modem's antenna connector and place clear of heavy metal or shielding.  
+- Solder and mechanically secure all critical connections. Use strain relief for cables and mount the electronics securely inside an IP65 enclosure. Route antennas to locations that provide the best signal (roof or window areas are ideal).
 
-By retrofitting each of the 6 campus buses with a low-cost IoT tracker unit, this system transmits GPS data over a cellular network to the Blynk IoT cloud. A publicly accessible web dashboard then visualizes the location of all buses simultaneously, eliminating guesswork and allowing users to perfectly time their arrival at the bus stop.
+---
 
-The core of this project is simplicity and reliability, leveraging the powerful Blynk platform to handle all the backend and frontend complexity, so we can focus on building robust hardware units.
+## Deployment & testing checklist
+1. Bench test power, GPS reception, and cellular registration.  
+2. Verify each tracker device appears in the Blynk Web Dashboard device list and shows location updates on the dashboard map.  
+3. Confirm map markers and hover labels display correctly.  
+4. Mount the unit in the enclosure, secure antennas, and reinstall on the vehicle.  
+5. Field test by driving the vehicle along routes, verify continuous updates and acceptable latency.  
+6. Monitor data usage and telemetry behavior for the chosen SIM plan.
 
-Features
-Real-Time Tracking: View the live location of all 6 campus buses with a refresh rate of every 5-10 seconds.
+---
 
-Web-Based Access: No app installation required. The tracking map is accessible via a simple URL on any device with a web browser (desktop or mobile).
+## Troubleshooting & tips
+- **No GPS fix:** Ensure antenna has a clear view of the sky, check wiring, and allow several minutes for a first fix.  
+- **SIM not registering / no data:** Verify the SIM has an active data plan and correct APN settings; test the SIM in a phone to confirm network coverage.  
+- **Frequent disconnects:** Inspect antenna routing, check for loose connectors, and consider a higher-gain antenna if coverage is marginal.  
+- **Power instability:** Ensure the buck converter is adjusted correctly and remains at 5.00 V under load; add bulk capacitance on the 5V rail if spikes occur.  
+- **Reduce data usage:** Increase location-send interval, send updates only when the vehicle moves, or implement delta reporting.
 
-Multi-Vehicle Support: The dashboard is configured to display multiple buses, each with a unique icon and identifier.
+---
 
-Low-Cost & Scalable: Each tracker unit is built with affordable, off-the-shelf components.
+## Safety
+- Perform initial wiring and testing on a bench power supply, not the vehicle battery.  
+- Confirm buck converter output with a multimeter before connecting the tracker.  
+- When wiring to the vehicle, follow standard electrical safety procedures and, if needed, consult a qualified technician.
 
-Reliable Connectivity: Uses a cellular network (GPRS/4G) to ensure consistent data transmission, independent of campus Wi-Fi.
+---
 
-Robust Power System: Powered directly by the bus's electrical system for set-and-forget operation.
+## Future improvements
+- ETA estimation based on historical route data.  
+- In-vehicle logging with buffering to survive temporary connectivity loss.  
+- Remote OTA updates and health/status telemetry (battery, signal strength).  
+- Integration with campus notification channels for delay alerts.
 
-System Architecture
-The system operates on a simple yet powerful architecture. Each component is chosen to ensure reliability and ease of setup.
+---
 
-Tracker Unit (On Bus): An ESP32 microcontroller paired with a GPS module acquires satellite location data. A SIM module transmits this data over the cellular network.
+## License & credits
+- Suggested license: MIT (or choose a license appropriate for your team).  
+- Built with the Blynk platform, TinyGPS++, and the Arduino ecosystem.
 
-Cellular Network: A standard mobile network (like Jio, Airtel, etc.) acts as the bridge to the internet.
+---
 
-Blynk IoT Cloud: This is the core of our system. It receives the data from all 6 tracker units, processes it, and serves it to the web dashboard. It handles all the server management, data storage, and user interface.
-
-Web Dashboard: A simple web page configured within the Blynk platform that displays a map widget. This map fetches and displays the coordinates from all tracker units in real-time.
-
-Hardware Requirements (per bus unit)
-You will need to build 6 identical hardware units.
-
-Component
-
-Model Example
-
-Quantity
-
-Purpose
-
-Microcontroller + Cellular
-
-TTGO T-Call ESP32 SIM800L
-
-1
-
-The "brains" of the tracker with built-in cellular capability.
-
-GPS Module
-
-NEO-6M or NEO-7M
-
-1
-
-Acquires location coordinates from GPS satellites.
-
-DC-DC Buck Converter
-
-LM2596
-
-1
-
-Safely steps down the bus's 12V/24V power to a stable 5V for the ESP32.
-
-SIM Card
-
-Any provider (e.g., Jio, Airtel)
-
-1
-
-Provides internet connectivity. An IoT/M2M data plan is ideal.
-
-Cellular Antenna
-
-SMA/u.FL Stick Antenna
-
-1
-
-For the SIM800L module.
-
-GPS Antenna
-
-Active Ceramic Patch Antenna
-
-1
-
-For the NEO-6M module.
-
-Project Enclosure
-
-Non-metallic, IP65 rated
-
-1
-
-Protects electronics from dust, vibration, and moisture.
-
-Connecting Wires
-
-Jumper Wires / Soldering Kit
-
--
-
-To connect all the components together.
-
-Software & Services
-Arduino IDE: To program the ESP32 microcontroller.
-
-Blynk Account: The free plan is sufficient to get started and supports enough devices for this project.
-
-Arduino Libraries:
-
-BlynkSimpleEsp32_SIM800.h
-
-TinyGPS++.h
-
-SoftwareSerial.h
-
-Step-by-Step Setup Guide
-Phase 1: Setting up the Blynk Cloud
-This is the first step, as you will need credentials from Blynk to program the hardware.
-
-Create a Blynk Account: Sign up on the Blynk website.
-
-Create a New Template:
-
-Go to the "Templates" section and click "+ New Template".
-
-Name: IITBBS Bus Tracker
-
-Hardware: ESP32
-
-Connection Type: WiFi (This setting doesn't matter much for our code, but it's a required field).
-
-Click "Done".
-
-Define Datastreams: Datastreams are the data channels from your hardware to the cloud.
-
-Inside your new template, go to the "Datastreams" tab.
-
-Create a New Datastream:
-
-Name: GPS Coordinates
-
-Virtual Pin: V0
-
-Data Type: Location (This is a special data type in Blynk).
-
-Click "Create".
-
-Create another Datastream:
-
-Name: Bus ID
-
-Virtual Pin: V1
-
-Data Type: String
-
-Click "Create".
-
-Create Devices: Now, create a device for each of the 6 buses.
-
-Go to the "Search" icon (magnifying glass) on the left panel, then click "Devices".
-
-Click "+ New Device".
-
-Select "From template".
-
-Choose your IITBBS Bus Tracker template.
-
-Give it a name, for example, Bus 1.
-
-Click "Create".
-
-A window will pop up with your BLYNK_AUTH_TOKEN. COPY THIS AND SAVE IT! This is the unique key for this device.
-
-Repeat this process 5 more times for Bus 2, Bus 3, etc., saving the unique Auth Token for each one.
-
-Configure the Web Dashboard: This is the map students will see.
-
-In your template, go to the "Web Dashboard" tab.
-
-Drag a Map widget from the right-hand panel onto the dashboard.
-
-Click the settings icon (wrench) on the Map widget.
-
-Title: IITBBS Live Bus Map
-
-Datastream: Select GPS Coordinates (V0).
-
-Enable "Show all devices on map".
-
-Enable "Show device name on hover".
-
-Save the dashboard.
-
-Phase 2: Hardware Assembly
-⚠️ SAFETY WARNING: Before connecting to the bus, do all your testing on a workbench using a 12V power adapter. Incorrectly wiring the buck converter can damage your components.
-
-Set the Buck Converter:
-
-Connect a 12V power source to the IN+ and IN- terminals of the LM2596.
-
-Use a multimeter on the OUT+ and OUT- terminals.
-
-Turn the small screw on the blue potentiometer until the multimeter reads exactly 5.0V. This is crucial.
-
-Wire the Components:
-
-Solder connections for a reliable, vibration-proof setup.
-
-BUCK CONVERTER   ->   TTGO T-CALL (ESP32)
--------------------------------------------
-OUT+             ->   5V Pin
-OUT-             ->   GND Pin
-
-NEO-6M GPS       ->   TTGO T-CALL (ESP32)
--------------------------------------------
-VCC              ->   3.3V Pin
-GND              ->   GND Pin
-TX Pin           ->   GPIO 2 (RX2)
-RX Pin           ->   GPIO 15 (TX2)
-
-SIM800L Module (on T-Call board)
--------------------------------------------
-- Insert SIM card into the slot.
-- Connect the cellular antenna to its u.FL connector.
-
-GPS Module
--------------------------------------------
-- Connect the ceramic GPS antenna to its u.FL connector.
+*This README is written to be self-contained and deployment-focused. It intentionally omits sample firmware and per-device placeholders so the document can be read and submitted without per-device manual edits.*
