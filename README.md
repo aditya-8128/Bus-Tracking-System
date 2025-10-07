@@ -99,7 +99,7 @@ Each tracker:
 1. Connect a stable 12V source to the converter input.  
 2. Measure the converter output with a multimeter and adjust the potentiometer until the output reads **5.00 V**. Confirm the reading under a light load.
 
-### Recommended connections (conceptual)
+### Recommended connections
 - **Power**: Buck converter 5V → ESP32 5V pin; buck converter GND → ESP32 GND.  
 - **GPS**: GPS module VCC → module-appropriate voltage (check module specs), GPS GND → GND, GPS TX → an available UART RX pin on the ESP32, GPS RX → the corresponding UART TX pin on the ESP32.  
 - **Cellular antenna**: Connect to the modem's antenna connector and place clear of heavy metal or shielding.  
@@ -117,7 +117,7 @@ Each tracker:
 
 ---
 
-## Troubleshooting & tips
+## Troubleshooting & tips ( if implementing ) 
 - **No GPS fix:** Ensure antenna has a clear view of the sky, check wiring, and allow several minutes for a first fix.  
 - **SIM not registering / no data:** Verify the SIM has an active data plan and correct APN settings; test the SIM in a phone to confirm network coverage.  
 - **Frequent disconnects:** Inspect antenna routing, check for loose connectors, and consider a higher-gain antenna if coverage is marginal.  
@@ -127,9 +127,8 @@ Each tracker:
 ---
 
 ## Safety
-- Perform initial wiring and testing on a bench power supply, not the vehicle battery.  
-- Confirm buck converter output with a multimeter before connecting the tracker.  
-- When wiring to the vehicle, follow standard electrical safety procedures and, if needed, consult a qualified technician.
+- Performed initial wiring and testing on a bench power supply, not the vehicle battery.  
+- Confirmed buck converter output with a multimeter before connecting the tracker.  
 
 ---
 
@@ -142,9 +141,7 @@ Each tracker:
 ---
 
 ## License & credits
-- Suggested license: MIT (or choose a license appropriate for your team).  
 - Built with the Blynk platform, TinyGPS++, and the Arduino ecosystem.
 
 ---
 
-*This README is written to be self-contained and deployment-focused. It intentionally omits sample firmware and per-device placeholders so the document can be read and submitted without per-device manual edits.*
